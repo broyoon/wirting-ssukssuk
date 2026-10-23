@@ -16,9 +16,8 @@ client=genai.Client(api_key=key)
 criteria=['일의 순서나 방법이 잘 드러나게 썼나요?','읽는 사람이 궁금해할 내용으로 썼나요?','바르고 정확한 문장으로 썼나요?','이어주는 말 또는 순서를 드러내는 말을 적절하게 사용했나요?','글의 짜임에 맞게 문단을 잘 나눴나요?']
 name=st.text_input('별명 (실명은 쓰지 않아도 돼요)',max_chars=20)
 subject=st.text_input('글의 주제 (선택)',placeholder='예: 샌드위치 만드는 방법')
-photo=st.camera_input('📷 글을 사진으로 찍어요')
-file=st.file_uploader('또는 사진 파일을 올려요',type=['png','jpg','jpeg'])
-image_file=photo or file
+st.info('📸 휴대전화에서는 아래 버튼을 누른 뒤 **사진 촬영**을 선택해 보세요. 기종에 따라 후면 카메라를 선택할 수 있어요. 전면 카메라만 열린다면 기본 카메라 앱으로 촬영한 후 **사진 보관함**에서 선택해 주세요.')
+image_file=st.file_uploader('📷 사진 찍기 또는 앨범에서 선택하기',type=['png','jpg','jpeg'],accept_multiple_files=False)
 if image_file:
  raw=image_file.getvalue()
  if len(raw)>12_000_000: st.error('사진 크기를 12MB 이하로 줄여 주세요.'); st.stop()
