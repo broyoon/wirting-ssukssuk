@@ -42,7 +42,7 @@ if image_file:
  if st.button('🔎 사진 속 글 읽기',disabled=not bool(key)):
   with st.spinner('손글씨를 읽고 있어요...'):
    try:
-    resp=client.models.generate_content(model='gemini-2.5-flash',contents=[types.Part.from_text(text='사진의 한글 손글씨를 그대로 옮겨 주세요. 맞춤법을 수정하지 말고 문단과 줄바꿈을 최대한 유지하세요. 읽을 수 없는 글자는 [판독불가]로 적으세요. 전사문만 출력하세요.'),types.Part.from_bytes(data=buf.getvalue(),mime_type='image/jpeg')])
+    resp=client.models.generate_content(model='gemini-3.8-flash',contents=[types.Part.from_text(text='사진의 한글 손글씨를 그대로 옮겨 주세요. 맞춤법을 수정하지 말고 문단과 줄바꿈을 최대한 유지하세요. 읽을 수 없는 글자는 [판독불가]로 적으세요. 전사문만 출력하세요.'),types.Part.from_bytes(data=buf.getvalue(),mime_type='image/jpeg')])
     st.session_state.recognized=resp.text
    except Exception as e:
     error_id=log_api_failure('image_read',e)
@@ -56,7 +56,7 @@ if image_file:
     with st.spinner('글을 꼼꼼하게 읽고 있어요...'):
      try:
       prompt='''초등학교 3학년 학생의 '일의 순서나 방법을 설명하는 글'을 평가하세요. 반드시 원문 근거로 평가하고 없는 내용을 만들어내지 마세요. 다음 5개 기준을 각각 0,5,10,15,20점 중 하나로 채점하세요: 1 순서/방법의 명확성 2 독자가 궁금해할 정보의 충실성 3 바르고 정확한 문장 4 연결/순서 표현의 적절성 5 글의 짜임에 맞는 문단 구분. 글의 길이 자체에 가산점 주지 마세요. 손글씨 판독 오류일 가능성이 있는 부분은 단정해 감점하지 마세요. 빈 줄로 구분된 문단을 고려하세요. 각 기준마다 어린이가 이해할 수 있는 근거 1문장과 실천 가능한 제안 1문장을 작성하세요. 잘한 점 1~2문장, 다음에 고칠 점 1~2문장을 따뜻하되 정확하게 작성하세요. 학생의 신상이나 이름을 추측하지 마세요. JSON 객체만 반환하세요. 형식: {"scores":[{"score":15,"reason":"...","tip":"..."} 다섯 개],"praise":"...","next_step":"..."}.'''
-      resp=client.models.generate_content(model='gemini-2.5-flash',contents=prompt+'\n\n글의 주제: '+(subject or '미지정')+'\n학생 글 원문:\n'+edited,config=types.GenerateContentConfig(response_mime_type='application/json',temperature=0.2))
+      resp=client.models.generate_content(model='gemini-3.8-flash',contents=prompt+'\n\n글의 주제: '+(subject or '미지정')+'\n학생 글 원문:\n'+edited,config=types.GenerateContentConfig(response_mime_type='application/json',temperature=0.2))
       data=json.loads(resp.text)
       scores=data['scores']
       if len(scores)!=5 or any(type(x['score'])!=int or x['score'] not in (0,5,10,15,20) for x in scores): raise ValueError('Invalid rubric')
