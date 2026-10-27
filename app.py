@@ -1,8 +1,17 @@
-import os, json, base64, io
+import os, json, base64, io, logging, re, uuid
 import streamlit as st
 from PIL import Image
 from google import genai
 from google.genai import types
+
+logger=logging.getLogger('writing_ssukssuk')
+
+def log_api_failure(stage, exc):
+ # Avoid printing exception bodies, which can contain request metadata or secrets.
+ error_id=uuid.uuid4().hex[:8]
+ status=getattr(exc,'code',None) or getattr(exc,'status_code',None)
+ logger.error('Gemini %s failed | error_id=%s | type=%s | status=%s',stage,error_id,type(exc).__name__,str(status)[:40])
+ return error_id
 
 st.set_page_config(page_title='글쓰기 쑥쑥!',page_icon='✏️',layout='centered')
 st.markdown('''<style>.stApp{background:#fcfaf5}h1{color:#27675a}.stButton button{border-radius:14px;font-weight:700}div[data-testid="stMetricValue"]{color:#27675a}</style>''',unsafe_allow_html=True)
@@ -35,7 +44,9 @@ if image_file:
    try:
     resp=client.models.generate_content(model='gemini-2.5-flash',contents=[types.Part.from_text(text='사진의 한글 손글씨를 그대로 옮겨 주세요. 맞춤법을 수정하지 말고 문단과 줄바꿈을 최대한 유지하세요. 읽을 수 없는 글자는 [판독불가]로 적으세요. 전사문만 출력하세요.'),types.Part.from_bytes(data=buf.getvalue(),mime_type='image/jpeg')])
     st.session_state.recognized=resp.text
-   except Exception as e: st.error('사진을 읽지 못했어요. 잠시 후 다시 시도해 주세요.')
+   except Exception as e:
+    error_id=log_api_failure('image_read',e)
+    st.error(f'사진을 읽지 못했어요. 선생님께 오류번호 {error_id}를 알려 주세요.')
  if 'recognized' in st.session_state:
   st.info('AI가 잘못 읽은 글자는 고쳐 주세요. 문단 사이에는 빈 줄을 남겨 주세요.')
   edited=st.text_area('📝 사진에서 읽은 글',value=st.session_state.recognized,height=270)
@@ -50,7 +61,9 @@ if image_file:
       scores=data['scores']
       if len(scores)!=5 or any(type(x['score'])!=int or x['score'] not in (0,5,10,15,20) for x in scores): raise ValueError('Invalid rubric')
       st.session_state.result=data
-     except Exception: st.error('평가 결과를 만들지 못했어요. 다시 시도해 주세요.')
+     except Exception as e:
+      error_id=log_api_failure('evaluation',e)
+      st.error(f'평가 결과를 만들지 못했어요. 선생님께 오류번호 {error_id}를 알려 주세요.')
   if 'result' in st.session_state:
    result=st.session_state.result
    st.divider();st.subheader('🎉 나의 글쓰기 성장 카드')
